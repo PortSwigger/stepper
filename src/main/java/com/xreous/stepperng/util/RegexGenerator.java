@@ -1,5 +1,13 @@
 package com.xreous.stepperng.util;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -7,6 +15,15 @@ import java.util.regex.PatternSyntaxException;
 public class RegexGenerator {
 
     private static final String REGEX_SPECIAL = "\\[](){}.*+?^$|";
+
+    private static final Pattern JSON_KEY_DOUBLE = Pattern.compile("\"([A-Za-z_][A-Za-z0-9_.-]*)\"\\s*:\\s*\"?\\s*$");
+    private static final Pattern JSON_KEY_SINGLE = Pattern.compile("'([A-Za-z_][A-Za-z0-9_.-]*)'\\s*:\\s*'?\\s*$");
+    private static final Pattern HEADER_FULL_LINE = Pattern.compile("^([A-Za-z][A-Za-z0-9-]*):\\s*$");
+    private static final Pattern HEADER_TAIL = Pattern.compile("([A-Za-z][A-Za-z0-9-]*):\\s*$");
+    private static final Pattern HEADER_LINE_START = Pattern.compile("^[A-Za-z][A-Za-z0-9-]*:\\s+");
+    private static final Pattern ASSIGNMENT = Pattern.compile("([A-Za-z_][A-Za-z0-9_.-]*)=\\s*\"?\\s*$");
+    private static final Pattern COOKIE_HEADER_PREFIX = Pattern.compile("^(Set-Cookie|Cookie)\\s*:\\s*", Pattern.CASE_INSENSITIVE);
+    private static final Pattern COOKIE_NAME = Pattern.compile("[A-Za-z_][A-Za-z0-9_.-]*");
 
     public static String escapeRegex(String literal) {
         StringBuilder sb = new StringBuilder();
@@ -30,6 +47,12 @@ public class RegexGenerator {
         if (trimStart >= trimEnd) return "";
         selectionStart += trimStart;
         selectedText = selectedText.substring(trimStart, trimEnd);
+
+        String jsonAnchor = tryJsonAnchor(fullText, selectedText, selectionStart);
+        if (jsonAnchor != null) return jsonAnchor;
+
+        String cookieAnchor = tryCookieHeaderAnchor(fullText, selectedText, selectionStart);
+        if (cookieAnchor != null) return cookieAnchor;
 
         int selectionEnd = selectionStart + selectedText.length();
         int lineEnd = findLineEnd(fullText, selectionStart);
@@ -108,6 +131,10 @@ public class RegexGenerator {
         String before = fullText.substring(lineStart, selStart);
         if (before.isEmpty()) return "";
 
+        // HTTP header lines: prefer the full "Name: " prefix over any colon found by the
+        // generic backward scan, so URL/port colons inside the value don't become the anchor.
+        if (HEADER_LINE_START.matcher(before).find()) return before;
+
         int bestKeyStart = -1;
         for (int i = before.length() - 1; i >= 0; i--) {
             char c = before.charAt(i);
@@ -126,7 +153,7 @@ public class RegexGenerator {
                     bestKeyStart = keyMatch;
                     break;
                 }
-                int headerMatch = findHeaderAnchor(sub, lineStart == 0 || fullText.charAt(lineStart - 1) == '\n');
+                int headerMatch = findHeaderAnchor(sub);
                 if (headerMatch >= 0) {
                     bestKeyStart = headerMatch;
                     break;
@@ -176,26 +203,17 @@ public class RegexGenerator {
     }
 
     private static int findJsonKeyAnchor(String before) {
-        Pattern jsonKey = Pattern.compile("\"([A-Za-z_][A-Za-z0-9_.-]*)\"\\s*:\\s*\"?\\s*$");
-        Matcher m = jsonKey.matcher(before);
+        Matcher m = JSON_KEY_DOUBLE.matcher(before);
         if (m.find()) return m.start();
-
-        Pattern jsonKeySingle = Pattern.compile("'([A-Za-z_][A-Za-z0-9_.-]*)'\\s*:\\s*'?\\s*$");
-        m = jsonKeySingle.matcher(before);
+        m = JSON_KEY_SINGLE.matcher(before);
         if (m.find()) return m.start();
-
         return -1;
     }
 
-    private static int findHeaderAnchor(String before, boolean isStartOfLine) {
-        Pattern header = Pattern.compile("^([A-Za-z][A-Za-z0-9-]*):\\s*$");
-        Matcher m = header.matcher(before.trim());
-        if (m.find()) {
-            int trimOffset = before.length() - before.stripLeading().length();
-            return trimOffset;
-        }
-        Pattern headerEnd = Pattern.compile("([A-Za-z][A-Za-z0-9-]*):\\s*$");
-        m = headerEnd.matcher(before);
+    private static int findHeaderAnchor(String before) {
+        Matcher m = HEADER_FULL_LINE.matcher(before.trim());
+        if (m.find()) return before.length() - before.stripLeading().length();
+        m = HEADER_TAIL.matcher(before);
         if (m.find()) return m.start();
         return -1;
     }
@@ -210,8 +228,7 @@ public class RegexGenerator {
     }
 
     private static int findAssignmentAnchor(String before, int eqPos) {
-        Pattern assign = Pattern.compile("([A-Za-z_][A-Za-z0-9_.-]*)=\\s*\"?\\s*$");
-        Matcher m = assign.matcher(before.substring(0, eqPos + 1));
+        Matcher m = ASSIGNMENT.matcher(before.substring(0, eqPos + 1));
         if (m.find()) return m.start();
         return -1;
     }
@@ -333,6 +350,135 @@ public class RegexGenerator {
         if (take > 0) {
             return before.substring(bestKeyStart - take);
         }
+        return null;
+    }
+
+    /** Resolves the JSON path of {@code selectedText} to an unambiguous anchored regex, or {@code null} if the selection isn't a unique non-array leaf. */
+    private static String tryJsonAnchor(String text, String selectedText, int selectionStart) {
+        if (selectedText.indexOf('\n') >= 0 || selectedText.indexOf('\r') >= 0) return null;
+        String regex = tryJsonAnchorForText(text, selectedText, text);
+        if (regex != null) return regex;
+
+        int bodyStart = findHttpBodyStart(text);
+        if (bodyStart >= 0 && selectionStart >= bodyStart) {
+            return tryJsonAnchorForText(text.substring(bodyStart), selectedText, text);
+        }
+        return null;
+    }
+
+    private static String tryJsonAnchorForText(String jsonText, String selectedText, String matchText) {
+        JsonElement root;
+        try {
+            root = JsonParser.parseString(jsonText);
+        } catch (Exception e) { return null; }
+        if (root == null || (!root.isJsonObject() && !root.isJsonArray())) return null;
+
+        List<JsonMatch> matches = new ArrayList<>();
+        findJsonPaths(root, new ArrayDeque<>(), selectedText, matches);
+        if (matches.size() != 1) return null;
+
+        JsonMatch match = matches.get(0);
+        if (match.path.size() < 2) return null;
+        for (String seg : match.path) if (seg.startsWith("[")) return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < match.path.size(); i++) {
+            if (i > 0) sb.append("[\\s\\S]*?");
+            sb.append(escapeRegex("\"" + match.path.get(i) + "\"")).append("\\s*:\\s*");
+        }
+        // String values are delimited by quotes; numbers/booleans/null are bounded by JSON structural chars.
+        sb.append(match.isString ? "\"([^\"]*)\"" : "([^,}\\]\\s]+)");
+        String regex = sb.toString();
+
+        try {
+            Matcher m = Pattern.compile(regex).matcher(matchText);
+            if (m.find() && selectedText.equals(m.group(1))) return regex;
+        } catch (PatternSyntaxException ignored) {}
+        return null;
+    }
+
+    private static int findHttpBodyStart(String text) {
+        int crlf = text.indexOf("\r\n\r\n");
+        int lf = text.indexOf("\n\n");
+        if (crlf < 0) return lf >= 0 ? lf + 2 : -1;
+        if (lf < 0) return crlf + 4;
+        return crlf < lf ? crlf + 4 : lf + 2;
+    }
+
+    private record JsonMatch(List<String> path, boolean isString) {}
+
+    private static void findJsonPaths(JsonElement node, Deque<String> path, String target, List<JsonMatch> out) {
+        if (node.isJsonObject()) {
+            for (var entry : node.getAsJsonObject().entrySet()) {
+                path.addLast(entry.getKey());
+                findJsonPaths(entry.getValue(), path, target, out);
+                path.removeLast();
+            }
+        } else if (node.isJsonArray()) {
+            var arr = node.getAsJsonArray();
+            for (int i = 0; i < arr.size(); i++) {
+                path.addLast("[" + i + "]");
+                findJsonPaths(arr.get(i), path, target, out);
+                path.removeLast();
+            }
+        } else if (node.isJsonPrimitive()) {
+            JsonPrimitive prim = node.getAsJsonPrimitive();
+            if (target.equals(prim.getAsString())) {
+                out.add(new JsonMatch(new ArrayList<>(path), prim.isString()));
+            }
+        }
+    }
+
+    /** Anchors selections inside {@code Cookie:}/{@code Set-Cookie:} headers on the enclosing {@code name=value} pair. */
+    private static String tryCookieHeaderAnchor(String fullText, String selectedText, int selectionStart) {
+        int lineStart = findLineStart(fullText, selectionStart);
+        int lineEnd = findLineEnd(fullText, selectionStart);
+        int selectionEnd = selectionStart + selectedText.length();
+        if (selectionEnd > lineEnd) return null;
+
+        String line = fullText.substring(lineStart, lineEnd);
+        Matcher hm = COOKIE_HEADER_PREFIX.matcher(line);
+        if (!hm.find()) return null;
+        String headerName = hm.group(1);
+        int valueStart = hm.end();
+
+        int selInLine = selectionStart - lineStart;
+        int selEndInLine = selectionEnd - lineStart;
+        if (selInLine < valueStart) return null;
+
+        int pairStart = selInLine;
+        while (pairStart > valueStart && line.charAt(pairStart - 1) != ';') pairStart--;
+        while (pairStart < line.length() && Character.isWhitespace(line.charAt(pairStart))) pairStart++;
+
+        int pairEnd = selEndInLine;
+        while (pairEnd < line.length() && line.charAt(pairEnd) != ';') pairEnd++;
+        int trimmedEnd = pairEnd;
+        while (trimmedEnd > pairStart && Character.isWhitespace(line.charAt(trimmedEnd - 1))) trimmedEnd--;
+
+        String pair = line.substring(pairStart, trimmedEnd);
+        int eq = pair.indexOf('=');
+        if (eq <= 0) return null;
+        String name = pair.substring(0, eq);
+        String value = pair.substring(eq + 1);
+        if (!COOKIE_NAME.matcher(name).matches()) return null;
+        if (!selectedText.equals(value) && !selectedText.equals(value.trim())) return null;
+
+        boolean firstPair = pairStart == valueStart;
+        boolean isSetCookie = "Set-Cookie".equalsIgnoreCase(headerName);
+
+        String regex;
+        if (isSetCookie && firstPair) {
+            regex = escapeRegex(headerName) + ":\\s*" + escapeRegex(name) + "=([^;\\r\\n]*)";
+        } else {
+            // Negative lookbehind prevents matching a name that's a suffix of another (e.g. "id" inside "sid").
+            regex = escapeRegex(headerName) + ":[^\\r\\n]*?(?<![A-Za-z0-9_.-])"
+                    + escapeRegex(name) + "=([^;\\r\\n]*)";
+        }
+
+        try {
+            Matcher m = Pattern.compile(regex).matcher(fullText);
+            if (m.find() && selectedText.equals(m.group(1).trim())) return regex;
+        } catch (PatternSyntaxException ignored) {}
         return null;
     }
 }
