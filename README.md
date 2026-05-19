@@ -4,6 +4,8 @@ A Burp Suite extension for chaining multi-step HTTP request sequences with autom
 
 Examples & writeup: https://xreous.io/posts/stepper-ng/
 
+Also check out this great video tutorial by [ryarmst](https://github.com/ryarmst): https://www.youtube.com/playlist?list=PLwdBLHqdMyeFp2jdshGSOYEYXqPQrEzIK
+
 > Based on [Stepper](https://github.com/CoreyD97/Stepper) by CoreyD97. Migrated to the Burp Montoya API and extended with new features.
 
 ![Sequence overview page](images/overview.png)
