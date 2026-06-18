@@ -9,5 +9,5 @@ ProOnly: False
 Author: Xre0uS, CoreyD97
 ShortDescription: A multi-stage Repeater replacement
 EntryPoint: releases/Stepper.jar
-BuildCommand: ./gradlew jar
+BuildCommand: ./gradlew build
 SupportedProducts: Pro, Community
