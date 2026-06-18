@@ -1,0 +1,13 @@
+Uuid: 065d156ecefd480fa3efa36e05d55f77
+ExtensionType: 1
+Name: Stepper
+RepoName: stepper
+ScreenVersion: 2.3.3
+SerialVersion: 6
+MinPlatformVersion: 0
+ProOnly: False
+Author: Xre0uS, CoreyD97
+ShortDescription: A multi-stage Repeater replacement
+EntryPoint: releases/Stepper.jar
+BuildCommand: ./gradlew jar
+SupportedProducts: Pro, Community

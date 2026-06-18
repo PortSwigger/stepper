@@ -1,0 +1,47 @@
+<p>
+  Stepper chains multi-step HTTP request sequences with automatic variable extraction, session management, and
+  conditional logic. Define a login or token-refresh flow once, extract values from responses with regular expressions,
+  and have the sequence replay transparently whenever Repeater, Intruder, or Scanner needs a fresh session. It can
+  replace the combination of session handling rules and macros for many workflows.
+</p>
+
+<h2>Features</h2>
+<ul>
+  <li>Build ordered sequences of requests, extract values from each response, and reuse them in later steps with the
+    <code class="InlineCode">$VAR:name$</code> syntax.</li>
+  <li>Reference a published variable from Repeater, Intruder, or Scanner with <code
+      class="InlineCode">$VAR:Sequence:name$</code> and have its sequence run automatically, keeping sessions valid
+    during scans without manual intervention.</li>
+  <li>Keep published variables current as tokens refresh through normal browsing, so the latest value is reused without
+    re-running the sequence.</li>
+  <li>Drive each step with conditions based on the status line or response body, including match and not-match modes,
+    retry, and actions to continue, skip remaining steps, or jump to a named step.</li>
+  <li>Validate sessions before running a full login flow, and confirm session recovery afterwards, with an alert and
+    pause when recovery repeatedly fails.</li>
+  <li>Define static global variables (<code class="InlineCode">$GVAR:name$</code>) for credentials and constants, and
+    dynamic global variables (<code class="InlineCode">$DVAR:name$</code>) that update automatically from responses
+    across all tools.</li>
+  <li>Run sequences reliably during concurrent scans, with the option to make other requests wait for an in-progress
+    sequence so they receive freshly updated values.</li>
+  <li>Protect against data loss with scheduled backups of all sequences, variables, and settings, restorable through
+    import and export.</li>
+  <li>Generate regex from highlighted response text, preview all variable replacements before sending, and review every
+    step at a glance in the sequence overview.</li>
+</ul>
+
+<h2>Usage</h2>
+<ol>
+  <li>Create a sequence from the tree toolbar, then add steps directly or by sending a request from another tool to the
+    Stepper sequence.</li>
+  <li>For each step, define a post-execution variable with a regex (for example <code
+      class="InlineCode">"token":"(.*?)"</code> with the identifier <code class="InlineCode">jwt</code>), or highlight
+    text in a response and use Auto Regex.</li>
+  <li>Reference extracted values in later steps with <code class="InlineCode">$VAR:jwt$</code>; they are substituted at
+    execution time.</li>
+  <li>Run the whole sequence, or run only through a chosen step for a partial execution.</li>
+  <li>To replace session handling, publish a variable and reference it as <code
+      class="InlineCode">$VAR:Sequence:jwt$</code> from Repeater, Intruder, or Scanner; optionally mark a step as the
+    pre-validation step so a valid session skips the rest of the flow.</li>
+  <li>When a session handling rule injects a reference and its scope includes Extensions, add the "Variable Replacement
+    for Extensions" session handling action after the injecting action so the reference resolves correctly.</li>
+</ol>
