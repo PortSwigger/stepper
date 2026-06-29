@@ -1,8 +1,8 @@
 package com.xreous.stepperng;
 
 public class Globals {
-    public static final String EXTENSION_NAME = "Stepper-NG";
-    public static final String VERSION = "2.3.3";
+    public static final String EXTENSION_NAME = "Stepper";
+    public static final String VERSION = "2.3.4";
     public static final int MAX_SEQUENCE_DEPTH = 10;
     public static final String PREF_STEP_SEQUENCES = "sequences";
     public static final String PREF_PREV_VERSION = "previousVersion";

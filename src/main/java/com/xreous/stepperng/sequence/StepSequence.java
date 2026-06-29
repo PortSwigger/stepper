@@ -899,7 +899,7 @@ public class StepSequence
                                     + "The sequence has been temporarily disabled.\n\n"
                                     + "Please review and fix the issue, then manually\n"
                                     + "resume the engine in Burp's Dashboard.",
-                            "Stepper-NG - Session Broken",
+                            "Stepper - Session Broken",
                             JOptionPane.WARNING_MESSAGE);
                 } finally {
                     consecutiveFailures = 0;
@@ -924,7 +924,7 @@ public class StepSequence
                                     + "Tasks are still running. The sequence has been temporarily disabled.\n"
                                     + "You can pause the task execution engine to investigate,\n"
                                     + "or click OK to dismiss and continue.",
-                            "Stepper-NG - Session Broken",
+                            "Stepper - Session Broken",
                             JOptionPane.DEFAULT_OPTION,
                             JOptionPane.WARNING_MESSAGE,
                             null, options, options[1]);

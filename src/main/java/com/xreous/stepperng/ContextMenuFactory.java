@@ -43,7 +43,7 @@ public class ContextMenuFactory implements ContextMenuItemsProvider {
 
         if (!messages.isEmpty()) {
             final List<HttpRequestResponse> finalMessages = messages;
-            String addMenuTitle = String.format("Add %d %s to Stepper-NG", messages.size(), messages.size() == 1 ? "item" : "items");
+            String addMenuTitle = String.format("Add %d %s to Stepper", messages.size(), messages.size() == 1 ? "item" : "items");
             JMenu addStepMenu = new JMenu(addMenuTitle);
 
             for (StepSequence sequence : this.sequenceManager.getSequences()) {
@@ -287,7 +287,7 @@ public class ContextMenuFactory implements ContextMenuItemsProvider {
         final int fPreSelOffset = preSelOffset;
         final String fLabel = label;
 
-        JMenuItem autoRegexItem = new JMenuItem("Stepper-NG: Auto-Regex (" + label + ")");
+        JMenuItem autoRegexItem = new JMenuItem("Stepper: Auto-Regex (" + label + ")");
         autoRegexItem.addActionListener(actionEvent -> {
             Component parent = Stepper.suiteFrame();
             AutoRegexDialog.Result result = AutoRegexDialog.show(

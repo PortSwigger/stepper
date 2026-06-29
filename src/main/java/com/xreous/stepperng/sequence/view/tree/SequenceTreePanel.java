@@ -57,6 +57,7 @@ public final class SequenceTreePanel extends JPanel {
     private final Map<Step, StepVariableListener> registeredStepVarListeners = new HashMap<>();
     private final StepSequenceListener managerListener;
     private final JList<BuiltInRef> navList;
+    private final JComponent toolbar;
     private boolean suppressSelectionEvent = false;
 
     public SequenceTreePanel(SequenceManager sequenceManager, SelectionHandler handler) {
@@ -127,7 +128,8 @@ public final class SequenceTreePanel extends JPanel {
         navPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, Themes.lineColor(navPanel)));
         navPanel.add(navList, BorderLayout.CENTER);
 
-        add(buildToolbar(), BorderLayout.NORTH);
+        this.toolbar = buildToolbar();
+        add(toolbar,        BorderLayout.NORTH);
         add(scroller,       BorderLayout.CENTER);
         add(navPanel,       BorderLayout.SOUTH);
         setMinimumSize(new Dimension(140, 0));
@@ -151,7 +153,13 @@ public final class SequenceTreePanel extends JPanel {
         int navW = navList != null ? navList.getPreferredSize().width : 0;
         int content = Math.max(treeW + scrollbar + em, navW + em);
         int w = Math.min(Math.max(content, em * 14), em * 24);
+        w = Math.max(w, toolbarPreferredWidth());   // never clip the +Sequence / +Step buttons
         return new Dimension(w, Math.max(base.height, 300));
+    }
+
+    /** Preferred width of the toolbar row, so the divider can be sized to show the full button labels. */
+    public int toolbarPreferredWidth() {
+        return toolbar != null ? toolbar.getPreferredSize().width : 0;
     }
 
     public JTree getTree() { return tree; }
@@ -220,7 +228,7 @@ public final class SequenceTreePanel extends JPanel {
         JList<BuiltInRef> list = new JList<>(m);
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.setBorder(BorderFactory.createEmptyBorder());
-        list.setBackground(Themes.rowHighlightTint(list));
+        list.setBackground(Themes.rowHighlightBackground(list));
         list.setFont(list.getFont().deriveFont(Font.ITALIC));
         list.setFixedCellHeight(list.getFontMetrics(list.getFont()).getHeight() + 10);
         list.setCellRenderer(new NavCellRenderer());

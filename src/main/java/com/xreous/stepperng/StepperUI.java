@@ -16,6 +16,7 @@ import com.xreous.stepperng.util.view.SplitPaneDoubleClick;
 import com.xreous.stepperng.util.view.Themes;
 import com.xreous.stepperng.variable.DynamicGlobalVariableManager;
 import com.xreous.stepperng.variable.view.DynamicGlobalVariablesPanel;
+import burp.api.montoya.ui.settings.SettingsPanel;
 import javax.swing.*;
 import java.awt.*;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ public class StepperUI {
     private final Map<StepSequence, SequenceOverviewPanel> overviewMap = new HashMap<>();
     private final Map<StepSequence, StepListener> treeStepListeners = new HashMap<>();
     private final SequenceTreePanel treePanel;
+    private final OptionsPanel optionsPanel;
     private final JPanel detailContainer;
     private final CardLayout detailCards;
     private final JSplitPane splitPane;
@@ -40,13 +42,13 @@ public class StepperUI {
     public StepperUI(SequenceManager sequenceManager, DynamicGlobalVariableManager dynamicVarManager){
         this.sequenceManager = sequenceManager;
         DynamicGlobalVariablesPanel globalVarsPanel = new DynamicGlobalVariablesPanel(dynamicVarManager);
-        OptionsPanel optionsPanel = new OptionsPanel(this.sequenceManager);
+        this.optionsPanel = new OptionsPanel(this.sequenceManager);
         AboutPanel aboutPanel = new AboutPanel();
         this.detailCards = new CardLayout();
         this.detailContainer = new JPanel(detailCards);
         this.detailContainer.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
         this.detailContainer.add(wrap(globalVarsPanel), SequenceTreePanel.BUILTIN_GLOBAL_VARS);
-        this.detailContainer.add(wrap(optionsPanel), SequenceTreePanel.BUILTIN_PREFERENCES);
+        this.detailContainer.add(wrap(buildPreferencesRedirect()), SequenceTreePanel.BUILTIN_PREFERENCES);
         this.detailContainer.add(wrap(aboutPanel), SequenceTreePanel.BUILTIN_ABOUT);
         this.stepActionBar = new StepActionBar(step -> stepPanelMap.get(step));
         this.stepActionBar.setBorder(BorderFactory.createEmptyBorder(2, 4, 4, 4));
@@ -88,7 +90,7 @@ public class StepperUI {
         detailWithToolbar.add(header, BorderLayout.NORTH);
         detailWithToolbar.add(splitPane, BorderLayout.CENTER);
         this.detailWithToolbar = detailWithToolbar;
-        this.popOutPanel = new PopOutPanel(Stepper.montoya, detailWithToolbar, "Stepper-NG");
+        this.popOutPanel = new PopOutPanel(Stepper.montoya, detailWithToolbar, "Stepper");
         this.popOutPanel.addHierarchyListener(e -> {
             if ((e.getChangeFlags() & java.awt.event.HierarchyEvent.SHOWING_CHANGED) != 0 && popOutPanel.isShowing()) {
                 clearHighlight();
@@ -122,7 +124,7 @@ public class StepperUI {
         }
         if (contentW <= 0) return;
         int scrollbar = Math.max(12, UIManager.getInt("ScrollBar.width"));
-        int desired = contentW + scrollbar + 16;
+        int desired = Math.max(contentW + scrollbar + 16, treePanel.toolbarPreferredWidth());
         int max = Math.max(240, splitPane.getWidth() - 200);
         splitPane.setDividerLocation(Math.max(240, Math.min(desired, max)));
     }
@@ -157,13 +159,41 @@ public class StepperUI {
             selectedSequence = null;
             selectedStep = null;
             if (header != null) header.setVisible(false);
-            for (Component c : detailContainer.getComponents()) c.setVisible(false);
             detailCards.show(detailContainer, key);
+            if (SequenceTreePanel.BUILTIN_PREFERENCES.equals(key)) openSettingsWindow();
             if (stepActionBar != null) stepActionBar.setSelection(null, null);
             if (detailWithToolbar != null) { detailWithToolbar.revalidate(); detailWithToolbar.repaint(); }
-            detailContainer.revalidate();
-            detailContainer.repaint();
         }
+    }
+    /** The Preferences UI, registered as a native panel in Burp's Settings window. */
+    public SettingsPanel getSettingsPanel() {
+        return optionsPanel;
+    }
+
+    private void openSettingsWindow() {
+        try {
+            Stepper.montoya.userInterface().openSettingsWindow();
+        } catch (Exception ex) {
+            try { Stepper.montoya.logging().logToError("Stepper: Failed to open settings window: " + ex.getMessage()); } catch (Exception ignored) {}
+        }
+    }
+
+    /** Sidebar placeholder shown when "Preferences" is selected; the real panel lives in Burp's Settings window. */
+    private JComponent buildPreferencesRedirect() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel inner = new JPanel();
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        JLabel title = new JLabel("Preferences are in Burp's Settings window.");
+        title.setForeground(Themes.disabledForeground(panel));
+        title.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JButton open = new JButton("Open Settings…");
+        open.setAlignmentX(Component.CENTER_ALIGNMENT);
+        open.addActionListener(e -> openSettingsWindow());
+        inner.add(title);
+        inner.add(Box.createVerticalStrut(12));
+        inner.add(open);
+        panel.add(inner);
+        return panel;
     }
     private void registerSequenceDetail(StepSequence sequence) {
         if (overviewMap.containsKey(sequence)) return;

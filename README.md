@@ -170,7 +170,7 @@ If the extension sends requests with no variable references (literal stale token
 
 Output: `releases/stepper-ng.jar`
 
-Requirements: Java 25, Gradle 9.4.0 (wrapper included)
+Requirements: Java 21, Gradle 9.4.0 (wrapper included)
 
 ## Installation
 

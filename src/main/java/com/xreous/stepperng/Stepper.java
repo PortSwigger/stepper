@@ -151,6 +151,7 @@ public class Stepper implements BurpExtension {
         try {
             ui = new StepperUI(sequenceManager, dynamicGlobalVariableManager);
             api.userInterface().registerSuiteTab(Globals.EXTENSION_NAME, ui.getUiComponent());
+            api.userInterface().registerSettingsPanel(ui.getSettingsPanel());
             api.logging().logToOutput("Stepper-NG " + Globals.VERSION + " loaded successfully."
                     + (degradedMode ? " (DEGRADED MODE — project file corrupted)" : ""));
         } catch (Exception e) {
@@ -238,7 +239,7 @@ public class Stepper implements BurpExtension {
         SwingUtilities.invokeLater(() -> {
             String message;
             if (hasRecoveredData) {
-                message = "Stepper-NG detected a corrupted Burp project file.\n\n"
+                message = "Stepper detected a corrupted Burp project file.\n\n"
                         + "Some data was recovered and loaded into memory. Changes will NOT be saved\n"
                         + "to the project file. Use Preferences > Export to save your recovered data\n"
                         + "to a file before closing Burp.\n\n"
@@ -247,7 +248,7 @@ public class Stepper implements BurpExtension {
                         + "  - " + dynamicGlobalVariableManager.getVariables().size() + " dynamic variable(s)\n"
                         + "  - " + dynamicGlobalVariableManager.getStaticVariables().size() + " static variable(s)";
             } else {
-                message = "Stepper-NG detected a corrupted Burp project file.\n\n"
+                message = "Stepper detected a corrupted Burp project file.\n\n"
                         + "No data could be recovered. The extension is running in degraded mode\n"
                         + "with default settings. Changes will NOT be saved to the project file.\n\n"
                         + "If you have a backup export file, use Preferences > Import to restore your data.";
@@ -257,7 +258,7 @@ public class Stepper implements BurpExtension {
             int result = JOptionPane.showOptionDialog(
                     suiteFrame(),
                     message,
-                    "Stepper-NG — Project File Corrupted",
+                    "Stepper — Project File Corrupted",
                     JOptionPane.DEFAULT_OPTION, JOptionPane.WARNING_MESSAGE,
                     null, options, options[0]);
 

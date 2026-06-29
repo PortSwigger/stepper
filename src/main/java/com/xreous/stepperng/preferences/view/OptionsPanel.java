@@ -16,6 +16,7 @@ import com.xreous.stepperng.util.view.Themes;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
+import burp.api.montoya.ui.settings.SettingsPanel;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,8 +25,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
-public class OptionsPanel extends JPanel {
+public class OptionsPanel extends JPanel implements SettingsPanel {
 
     private final SequenceManager sequenceManager;
     private final Preferences preferences;
@@ -44,7 +46,7 @@ public class OptionsPanel extends JPanel {
     private void buildDegradedPanel() {
         ComponentGroup warningGroup = new ComponentGroup(ComponentGroup.Orientation.VERTICAL, "Status");
         JTextArea warningText = new JTextArea(
-                "Stepper-NG is running in degraded mode because the Burp project file is corrupted.\n\n"
+                "Stepper is running in degraded mode because the Burp project file is corrupted.\n\n"
                 + "Preferences cannot be loaded or saved. Use the Import/Export buttons below to\n"
                 + "recover or back up your sequences and variables.");
         warningText.setEditable(false);
@@ -507,5 +509,15 @@ public class OptionsPanel extends JPanel {
         if (globalCount > 0) msg.append("\n  ").append(globalCount).append(" global variable(s)");
         JOptionPane.showMessageDialog(com.xreous.stepperng.Stepper.suiteFrame(), msg.toString(), "Import Complete", JOptionPane.INFORMATION_MESSAGE);
         com.xreous.stepperng.util.DuplicateNameWarning.warnImportSummary(com.xreous.stepperng.Stepper.suiteFrame());
+    }
+
+    @Override
+    public JComponent uiComponent() {
+        return this;
+    }
+
+    @Override
+    public Set<String> keywords() {
+        return Set.of("stepper", "variables", "session handling", "auto-backup", "content-length");
     }
 }
