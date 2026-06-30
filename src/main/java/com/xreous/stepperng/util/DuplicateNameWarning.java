@@ -97,7 +97,7 @@ public final class DuplicateNameWarning {
         }
 
         if (lines.isEmpty()) return null;
-        StringBuilder sb = new StringBuilder("Stepper-NG detected duplicate names. Please rename to avoid ambiguous variable resolution:\n\n");
+        StringBuilder sb = new StringBuilder("Stepper detected duplicate names. Please rename to avoid ambiguous variable resolution:\n\n");
         for (String l : lines) sb.append(l).append('\n');
         return sb.toString();
     }
@@ -108,7 +108,7 @@ public final class DuplicateNameWarning {
         if (summary == null) return;
         SwingUtilities.invokeLater(() ->
                 JOptionPane.showMessageDialog(resolveParent(parent), summary,
-                        "Stepper-NG — Duplicate Names", JOptionPane.WARNING_MESSAGE));
+                        "Stepper — Duplicate Names", JOptionPane.WARNING_MESSAGE));
     }
 
     private static void collectGlobalDupes(List<String> names, String label, List<String> out) {
@@ -132,7 +132,7 @@ public final class DuplicateNameWarning {
         final String msg = sb.toString();
         SwingUtilities.invokeLater(() ->
                 JOptionPane.showMessageDialog(resolveParent(parent), msg,
-                        "Stepper-NG — Duplicate Name", JOptionPane.WARNING_MESSAGE));
+                        "Stepper — Duplicate Name", JOptionPane.WARNING_MESSAGE));
     }
 
     private static Component resolveParent(Component parent) {

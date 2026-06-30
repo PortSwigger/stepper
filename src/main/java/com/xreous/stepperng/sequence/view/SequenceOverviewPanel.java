@@ -636,7 +636,7 @@ public class SequenceOverviewPanel extends JPanel {
                 }
                 if (step.getStepId().equals(stepSequence.getValidationStepId())
                         || step.getStepId().equals(stepSequence.getPostValidationStepId())) {
-                    c.setBackground(Themes.rowHighlightTint(table));
+                    c.setBackground(Themes.rowHighlightBackground(table));
                 } else {
                     c.setBackground(table.getBackground());
                 }

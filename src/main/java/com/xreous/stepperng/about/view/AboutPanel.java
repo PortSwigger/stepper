@@ -23,7 +23,7 @@ public class AboutPanel extends JPanel {
         JPanel panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
 
-        JLabel header = new JLabel("Stepper-NG v" + Globals.VERSION);
+        JLabel header = new JLabel("Stepper v" + Globals.VERSION);
         header.setFont(header.getFont().deriveFont(Font.BOLD, 20f));
         header.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(header);
@@ -41,7 +41,7 @@ public class AboutPanel extends JPanel {
         panel.add(credits);
 
         JPanel links = new JPanel(new FlowLayout(FlowLayout.CENTER, 12, 2));
-        links.add(linkButton("Stepper-NG on GitHub", "https://github.com/Xre0uS/stepper-ng", githubIcon()));
+        links.add(linkButton("Stepper on GitHub", "https://github.com/Xre0uS/stepper-ng", githubIcon()));
         links.add(linkButton("Original Stepper", "https://github.com/CoreyD97/Stepper", null));
         links.setAlignmentX(Component.CENTER_ALIGNMENT);
         panel.add(links);
@@ -136,7 +136,7 @@ public class AboutPanel extends JPanel {
                 + "<li>Loop prevention &mdash; max depth " + Globals.MAX_SEQUENCE_DEPTH + ", circular dependency detection.</li>"
                 + "</ul>"
                 + "<h3>Session Handling Action</h3>"
-                + "<p>For Extensions scope, add <i>Stepper-NG: Variable Replacement for Extensions</i> as a session "
+                + "<p>For Extensions scope, add <i>Stepper: Variable Replacement for Extensions</i> as a session "
                 + "handling action after any rule that injects <code>$VAR:</code> references. This resolves them "
                 + "inside the session-handling phase, since the HTTP handler runs before session rules for extensions.</p>"
                 + "</body></html>";

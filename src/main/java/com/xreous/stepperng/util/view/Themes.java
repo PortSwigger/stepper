@@ -38,6 +38,24 @@ public final class Themes {
     public static Color rowHighlightTint(Component c) {
         return isDark(c) ? new Color(110, 160, 220, 60) : new Color(70, 130, 180, 30);
     }
+    /**
+     * Opaque equivalent of {@link #rowHighlightTint}, composited over the component's
+     * current background. Use this for {@code setBackground} on opaque Swing components:
+     * a translucent colour there ghosts because the base is never cleared before the blend.
+     */
+    public static Color rowHighlightBackground(Component c) {
+        Color base = c != null ? c.getBackground() : null;
+        if (base == null) base = UIManager.getColor("List.background");
+        if (base == null) base = UIManager.getColor("Panel.background");
+        if (base == null) base = UIManager.getColor("control");
+        if (base == null) base = Color.GRAY;
+        Color tint = rowHighlightTint(c);
+        double a = tint.getAlpha() / 255.0;
+        int r = (int) Math.round(tint.getRed() * a + base.getRed() * (1 - a));
+        int g = (int) Math.round(tint.getGreen() * a + base.getGreen() * (1 - a));
+        int b = (int) Math.round(tint.getBlue() * a + base.getBlue() * (1 - a));
+        return new Color(r, g, b);
+    }
     public static Color okBackground(Component c) {
         return isDark(c) ? new Color(60, 140, 80) : new Color(76, 200, 130);
     }

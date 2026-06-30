@@ -34,7 +34,7 @@ public class StepperSessionHandlingAction implements SessionHandlingAction {
 
     @Override
     public String name() {
-        return "Stepper-NG: Variable Replacement for Extensions";
+        return "Stepper: Variable Replacement for Extensions";
     }
 
     @Override
