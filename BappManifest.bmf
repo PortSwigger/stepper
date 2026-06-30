@@ -3,7 +3,7 @@ ExtensionType: 1
 Name: Stepper
 RepoName: stepper
 ScreenVersion: 2.3.4
-SerialVersion: 9
+SerialVersion: 10
 MinPlatformVersion: 29
 ProOnly: False
 Author: Xre0uS, CoreyD97
